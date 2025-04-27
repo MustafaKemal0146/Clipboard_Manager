@@ -1,47 +1,42 @@
-# 📋 Clipboard Manager
+# Clipboard Manager
 
-Bu proje, kopyaladığınız yazıları kaydeden ve bir kısayol tuşu (`CTRL+SHIFT+V`) ile hızlıca erişmenizi sağlayan bir **Clipboard Manager** uygulamasıdır.
+Clipboard geçmişini yöneten basit bir Python uygulamasıdır.  
+Bu uygulama arka planda bir servis olarak çalışır ve kopyalanan içerikleri yönetir.
 
 ---
 
-## 🛠 Gereksinimler
+## Gereksinimler
 
 - Python 3
-- `python3-tk`
-- `pyperclip`
-- `keyboard`
-- `xclip` (veya `xsel`) - Linux'ta clipboard yönetimi için
+- pip paket yöneticisi
+- `xclip` (Linux üzerinde pyperclip kütüphanesi için gereklidir)
 
-Kurulum:
+### Gerekli Python kütüphanelerini kurmak için:
+
 ```bash
-sudo apt update
-sudo apt install python3 python3-tk xclip
-pip3 install pyperclip keyboard
+pip install -r requirements.txt
+```
+
+`requirements.txt` içeriği:
+
+```
+pyperclip
+keyboard
 ```
 
 ---
 
-## 🚀 Uygulamayı Başlatma
+## Sistem Servisi Kurulumu
 
-Geçici çalıştırmak istersen:
-```bash
-sudo python3 main.py
-```
-> Not: `keyboard` kütüphanesi Linux'ta root yetkisi gerektirir.
+Uygulamayı sürekli arka planda çalıştırmak için bir **systemd** servisi oluşturuyoruz.
 
----
-
-## 🔥 Uygulamayı Arka Planda Sürekli Çalıştırmak (Sistem Servisi)
-
-Uygulamayı sürekli çalıştırmak için bir **systemd servisi** tanımlayabiliriz.
-
-1. Aşağıdaki dosyayı oluştur:
+1. Servis dosyasını oluştur:
 
 ```bash
 sudo nano /etc/systemd/system/clipboard_manager.service
 ```
 
-2. İçerisine şunu yapıştır:
+İçine şunları yapıştır:
 
 ```ini
 [Unit]
@@ -50,50 +45,61 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /home/kullanici_adi/Desktop/Clipboard_Manager/main.py
-WorkingDirectory=/home/kullanici_adi/Desktop/Clipboard_Manager
+ExecStart=/usr/bin/python3 /home/solussola/Desktop/Clipboard_Manager/main.py
+WorkingDirectory=/home/solussola/Desktop/Clipboard_Manager
 Restart=always
-User=kullanici_adi
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-> DİKKAT:  
-> `/home/kullanici_adi/` ve `kullanici_adi` kısımlarını kendi kullanıcı adınla değiştir.
+Düzenlemeyi kaydetmek için:  
+**CTRL + O** → Enter → **CTRL + X**
 
 ---
 
-3. Servisi aktif hale getir:
+2. Değişiklikleri sisteme okut:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable clipboard_manager.service
-sudo systemctl start clipboard_manager.service
 ```
 
-Servis durumunu kontrol etmek için:
+3. Servisi başlat ve otomatik başlasın diye aktif et:
 
 ```bash
-sudo systemctl status clipboard_manager.service
+sudo systemctl enable clipboard_manager
+sudo systemctl start clipboard_manager
 ```
 
-Servisi durdurmak için:
+4. Servis durumunu kontrol et:
 
 ```bash
-sudo systemctl stop clipboard_manager.service
+sudo systemctl status clipboard_manager
+```
+
+Başarıyla çalışıyorsa şöyle bir çıktı göreceksiniz:
+
+```
+● clipboard_manager.service - Clipboard Manager Service
+     Active: active (running)
 ```
 
 ---
 
-## 🐛 Olası Hatalar ve Çözümleri
+## Ekstra
 
-- `Pyperclip could not find a copy/paste mechanism`:  
-  Çözüm:  
-  ```bash
-  sudo apt install xclip
-  ```
+Eğer clipboard ile ilgili hata alırsanız, şu paketleri kurmayı unutmayın:
 
-- `You must be root to use this library`:  
-  Çözüm:  
-  `sudo` kullanarak scripti çalıştır.
+```bash
+sudo apt update
+sudo apt install xclip
+```
+
+---
+
+## Notlar
+
+- Servis **root yetkisi** ile çalışmaktadır. Çünkü `keyboard` kütüphanesi düşük seviyeli giriş yakalama (hotkey dinleme) için root izinlerine ihtiyaç duyar.
+- Servis dosyasındaki `User=` satırı bu yüzden kaldırılmıştır.
+
+---
